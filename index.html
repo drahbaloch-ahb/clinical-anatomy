@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Anatomy Assessment - Prof. Baloch</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+        :root { --isra-blue: #003366; --accent: #d3542c; --teal: #1f6f78; --error: #b54832; --bg: #f6f1e7; --card: #ffffff; --stroke: #e3d6c5; --gold: #D4AF37; }
+        
+        body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        
+        #gatekeeper { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(246, 241, 231, 0.98); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .login-card { background: white; padding: 40px; border-radius: 22px; border: 1px solid var(--stroke); box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 90%; max-width: 400px; }
+        .login-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--stroke); border-radius: 8px; box-sizing: border-box; }
+        
+        .quiz-container { width: 100%; max-width: 800px; background: var(--card); padding: 40px; border-radius: 22px; border: 1px solid var(--stroke); box-shadow: 0 18px 40px rgba(0,0,0,0.12); display: none; }
+        .header { text-align: center; border-bottom: 2px solid var(--stroke); margin-bottom: 30px; padding-bottom: 20px; }
+        .uni-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--isra-blue); }
+        
+        .question-text { font-family: 'Space Grotesk', sans-serif; font-size: 1.25em; font-weight: 600; margin-bottom: 32px; line-height: 1.6; white-space: pre-line; color: #171717; }
+        .option-item { background: #fff; border: 1px solid var(--stroke); padding: 18px; border-radius: 14px; cursor: pointer; margin-bottom: 12px; transition: all 0.25s ease; position: relative; }
+        .option-item:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .option-item.selected.correct { background-color: rgba(31, 111, 120, 0.1); border-color: var(--teal); }
+        .option-item.selected.incorrect { background-color: rgba(181, 72, 50, 0.1); border-color: var(--error); }
+        
+        .feedback-state { font-weight: bold; font-size: 0.9em; display: none; margin-bottom: 4px; }
+        .selected .feedback-state { display: block; }
+        .correct .feedback-state { color: var(--teal); }
+        .incorrect .feedback-state { color: var(--error); }
+        
+        .rationale { font-size: 0.95em; color: #5b5b5b; margin-top: 8px; display: none; line-height: 1.5; border-top: 1px solid #eee; padding-top: 8px; }
+        .selected .rationale { display: block; }
+        
+        .gold-seal { display: none; margin: 0 auto 20px; width: 120px; height: 120px; background: var(--gold); border-radius: 50%; border: 5px double white; box-shadow: 0 0 15px rgba(212,175,55,0.4); align-items: center; justify-content: center; color: white; font-weight: bold; font-family: 'Space Grotesk'; font-size: 0.75rem; text-align: center; animation: pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-direction: column; }
+        @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .hint-box { background: #fff7ef; border: 1px solid #e3d6c5; padding: 16px; margin-bottom: 24px; border-radius: 12px; display: none; border-left: 5px solid var(--accent); }
+        .nav-buttons { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; }
+        .btn { padding: 12px 30px; border-radius: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-next { background: var(--isra-blue); color: white; }
+        textarea { width: 100%; height: 100px; margin-top: 20px; padding: 15px; border: 1px solid var(--stroke); border-radius: 12px; font-family: inherit; box-sizing: border-box; resize: none; }
+    </style>
+</head>
+<body>
+
+<div id="gatekeeper">
+    <div class="login-card">
+        <div class="uni-title" style="font-size: 1.4rem;">ISRA UNIVERSITY</div>
+        <p style="color: #5b5b5b; font-size: 0.9rem;">Verify Official Credentials</p>
+        <input type="text" id="nameInput" class="login-input" placeholder="Full Name">
+        <input type="text" id="rollInput" class="login-input" placeholder="Roll Number">
+        <input type="email" id="emailInput" class="login-input" placeholder="Email @isra.edu.pk">
+        <button class="btn btn-next" style="width: 100%; margin-top: 10px;" onclick="verifyStudent()">Start Case Study</button>
+        <p id="errorMsg" style="color: var(--error); font-size: 0.8rem; margin-top: 10px; display: none;">Invalid email. @isra.edu.pk required.</p>
+    </div>
+</div>
+
+<div class="quiz-container" id="main-ui">
+    <div class="header">
+        <div class="uni-title">ISRA UNIVERSITY</div>
+        <div style="font-weight: 600; color: #5b5b5b;">Department of Anatomy - Prof. Dr. Abdul Hafeez Baloch</div>
+    </div>
+    <div id="quiz-body">
+        <div id="quiz-content"></div>
+        <div id="hint-box" class="hint-box"><strong>💡 Clinical Hint:</strong> <br><span id="hint-text"></span></div>
+        <div class="nav-buttons">
+            <button id="hint-btn" class="btn" style="background: #eee;">💡 Hint</button>
+            <button id="next-btn" class="btn btn-next" disabled>Next Case →</button>
+        </div>
+    </div>
+    <div id="feedback-body" style="display:none; text-align:center;">
+        <div id="gold-seal" class="gold-seal"><span>🏆</span><br>CLINICAL EXCELLENCE</div>
+        <h2 style="font-family: 'Space Grotesk';">Assessment Results</h2>
+        <p style="font-size: 1.4rem;">Final Score: <span id="final-score" style="font-weight:bold; color: var(--teal);"></span></p>
+        <textarea id="student-comments" placeholder="Enter clinical notes for Prof. Baloch..."></textarea>
+        <button id="final-btn" class="btn btn-next" onclick="finalSubmit()" style="width:100%; margin-top:20px; justify-content: center;">Submit Result</button>
+    </div>
+</div>
+
+<script>
+    const googleSheetsURL = 'https://script.google.com/macros/s/AKfycbxHxM-Z1VM9kMoP9DPItDRH37CkD-LptANOntreNmcK4lL81jpbYdnoNJCWrYqqmDBNUg/exec';
+    let sInfo = { name: "", roll: "", email: "" };
+    let startTime = "";
+
+    const quizData = [
+        {
+            question: "A 45-year-old male undergoes surgery for a tumor within his parotid gland. Several months post-operation, he notices sweating on the skin of his cheek whenever he eats. This is diagnosed as Frey's syndrome. \n\nWhich nerve's regenerating parasympathetic fibers are responsible for this clinical sign?",
+            hint: "Focus on the nerve that directly carries the postganglionic secretomotor fibers to the parotid gland itself.",
+            answerOptions: [
+                { text: "Auriculotemporal nerve", isCorrect: true, rationale: "Correct! This nerve carries the secretomotor fibers; aberrant regeneration leads to gustatory sweating." },
+                { text: "Facial nerve", isCorrect: false, rationale: "This nerve provides motor innervation to facial muscles; damage leads to paralysis, not sweating." },
+                { text: "Glossopharyngeal nerve", isCorrect: false, rationale: "This is the source of preganglionic fibers synapsing at the otic ganglion." },
+                { text: "Great auricular nerve", isCorrect: false, rationale: "This sensory nerve supplies skin over the parotid but isn't the origin of these fibers." }
+            ]
+        },
+        {
+            question: "A patient presents with significant swelling over the angle of their jaw, which is painful and worsens when they are hungry or eating. A diagnosis of acute parotitis is made, likely due to a blockage of the parotid duct. \n\nTo enter the oral vestibule, this duct must pierce which muscle?",
+            hint: "Consider the muscle that constitutes the main substance of the cheek wall.",
+            answerOptions: [
+                { text: "Buccinator", isCorrect: true, rationale: "Correct! The duct pierces the buccinator opposite the upper second molar." },
+                { text: "Masseter", isCorrect: false, rationale: "The duct runs superficial to the masseter but does not pierce it." },
+                { text: "Medial pterygoid", isCorrect: false, rationale: "This is a muscle of mastication located deep to the mandibular ramus." },
+                { text: "Sternocleidomastoid", isCorrect: false, rationale: "This is a key posterior relation to the gland, not involved in the duct pathway." }
+            ]
+        },
+        {
+            question: "During a surgical procedure to remove a tumor located in the deepest part of the parotid gland, the surgeon must carefully navigate the structures that pass through the gland substance. \n\nWhich of the following structures is located most medially within the parotid bed?",
+            hint: "Recall the arrangement of the key neurovascular structures within the gland from superficial (lateral) to deep (medial).",
+            answerOptions: [
+                { text: "External carotid artery", isCorrect: true, rationale: "Correct! It is the most medial and deepest structure in the parotid gland." },
+                { text: "Facial nerve", isCorrect: false, rationale: "This is the most lateral/superficial structure within the gland." },
+                { text: "Retromandibular vein", isCorrect: false, rationale: "This vein lies in the intermediate position between the nerve and the artery." },
+                { text: "Parotid lymph nodes", isCorrect: false, rationale: "While present, they do not follow the specific medial-to-lateral neurovascular arrangement." }
+            ]
+        },
+        {
+            question: "A surgeon is performing an excision of the submandibular gland. To prevent postoperative complications such as altered sensation or taste, the surgeon must carefully identify and preserve a nerve that has a very close anatomical relationship with the submandibular duct. \n\nWhich nerve loops inferiorly around this duct?",
+            hint: "Think of the nerve that provides general sensation and taste to the anterior 2/3 of the tongue.",
+            answerOptions: [
+                { text: "Lingual nerve", isCorrect: true, rationale: "Correct! The lingual nerve hooks under the submandibular duct from lateral to medial." },
+                { text: "Hypoglossal nerve", isCorrect: false, rationale: "This motor nerve passes deep to the gland but does not loop around the duct." },
+                { text: "Glossopharyngeal nerve", isCorrect: false, rationale: "This is located more posteriorly and does not contact the submandibular duct." },
+                { text: "Chorda tympani", isCorrect: false, rationale: "While it carries taste, the physical structure looping the duct is the lingual nerve." }
+            ]
+        }
+    ];
+
+    let currentIndex = 0;
+    function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+    quizData.forEach(q => shuffle(q.answerOptions));
+    const state = quizData.map(() => ({ selectedIndex: null, hintVisible: false }));
+
+    function verifyStudent() {
+        const n = document.getElementById('nameInput').value.trim();
+        const r = document.getElementById('rollInput').value.trim();
+        const e = document.getElementById('emailInput').value.trim();
+        if (n && r && e.toLowerCase().endsWith("@isra.edu.pk")) {
+            sInfo = { name: n, roll: r, email: e };
+            startTime = new Date().toLocaleTimeString();
+            document.getElementById('gatekeeper').style.display = 'none';
+            document.getElementById('main-ui').style.display = 'block';
+            render();
+        } else { document.getElementById('errorMsg').style.display = 'block'; }
+    }
+
+    function render() {
+        const q = quizData[currentIndex];
+        const s = state[currentIndex];
+        document.getElementById('quiz-content').innerHTML = `<div class="question-text">Case Study ${currentIndex+1}:\n${q.question}</div>` + 
+            q.answerOptions.map((opt, i) => `
+                <div class="option-item ${s.selectedIndex === i ? 'selected ' + (opt.isCorrect ? 'correct' : 'incorrect') : ''}" onclick="select(${i})">
+                    <div class="feedback-state">${opt.isCorrect ? '✓ Correct Case Analysis' : '✕ Clinical Correlation Needed'}</div>
+                    <div style="font-weight:500;">${String.fromCharCode(65+i)}. ${opt.text}</div>
+                    <div class="rationale">${opt.rationale}</div>
+                </div>`).join('');
+        document.getElementById('hint-text').innerText = q.hint;
+        document.getElementById('hint-box').style.display = s.hintVisible ? 'block' : 'none';
+        document.getElementById('next-btn').disabled = s.selectedIndex === null;
+        document.getElementById('next-btn').innerText = currentIndex === quizData.length - 1 ? "Complete Summary" : "Next Case →";
+    }
+
+    window.select = (i) => { if (state[currentIndex].selectedIndex === null) { state[currentIndex].selectedIndex = i; render(); } };
+    document.getElementById('next-btn').onclick = () => { if (currentIndex < quizData.length - 1) { currentIndex++; render(); } else { showFeedback(); } };
+    document.getElementById('hint-btn').onclick = () => { state[currentIndex].hintVisible = !state[currentIndex].hintVisible; render(); };
+
+    function showFeedback() {
+        document.getElementById('quiz-body').style.display = 'none';
+        document.getElementById('feedback-body').style.display = 'block';
+        const score = state.filter((s, i) => s.selectedIndex !== null && quizData[i].answerOptions[s.selectedIndex].isCorrect).length;
+        document.getElementById('final-score').innerText = score + " / " + quizData.length;
+        if(score === quizData.length) document.getElementById('gold-seal').style.display = 'flex';
+    }
+
+    async function finalSubmit() {
+        const btn = document.getElementById('final-btn');
+        btn.disabled = true; btn.innerText = "Transmitting to Department...";
+        const payload = { name: sInfo.name, rollNumber: sInfo.roll, email: sInfo.email, score: document.getElementById('final-score').innerText, comments: document.getElementById('student-comments').value || "None", date: new Date().toLocaleDateString(), startTime: startTime };
+        try {
+            await fetch(googleSheetsURL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+            document.getElementById('main-ui').innerHTML = `<div style="text-align:center; padding:50px;"><h1 style="color:var(--teal);">Success!</h1><p>Thank you, ${sInfo.name}. Submission recorded.</p></div>`;
+            setTimeout(() => { window.close(); }, 5000);
+        } catch(e) { alert("Error."); btn.disabled = false; }
+    }
+</script>
+</body>
+</html>
